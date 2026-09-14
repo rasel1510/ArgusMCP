@@ -55,10 +55,17 @@ export async function initDB(): Promise<void> {
   const connectionString =
     process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/mcp_webanalyzer';
 
+  const isNeonOrSsl =
+    connectionString.includes('neon.tech') ||
+    connectionString.includes('sslmode=require') ||
+    connectionString.includes('ssl=true') ||
+    process.env.NODE_ENV === 'production';
+
   try {
     const testPool = new Pool({
       connectionString,
-      connectionTimeoutMillis: 1500,
+      connectionTimeoutMillis: 10000,
+      ssl: isNeonOrSsl ? { rejectUnauthorized: false } : undefined,
     });
 
     const client: PoolClient = await testPool.connect();
