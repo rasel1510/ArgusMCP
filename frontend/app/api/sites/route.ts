@@ -13,6 +13,7 @@ export async function GET(req: NextRequest) {
     const data = await res.json();
     return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Failed to fetch sites' }, { status: 500 });
+    console.warn(`[frontend-api] Backend at ${BACKEND_URL} not reachable yet: ${err.message}`);
+    return NextResponse.json({ sites: [], total: 0, backendOnline: false }, { status: 200 });
   }
 }
