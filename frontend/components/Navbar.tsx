@@ -1,8 +1,8 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import Link from 'next/link';
-import { Globe, Cpu, Sparkles, Terminal } from 'lucide-react';
+import { Globe, Activity } from 'lucide-react';
 
 export default function Navbar() {
   return (
@@ -10,77 +10,63 @@ export default function Navbar() {
       position: 'sticky',
       top: 0,
       zIndex: 50,
-      backdropFilter: 'blur(16px)',
-      backgroundColor: 'rgba(7, 9, 14, 0.8)',
-      borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-      padding: '0.875rem 1.5rem',
+      backdropFilter: 'blur(12px)',
+      WebkitBackdropFilter: 'blur(12px)',
+      backgroundColor: 'rgba(10, 11, 15, 0.88)',
+      borderBottom: '1px solid var(--border)',
+      padding: '0 1.5rem',
+      height: '52px',
+      display: 'flex',
+      alignItems: 'center',
     }}>
       <div style={{
         maxWidth: '1280px',
+        width: '100%',
         margin: '0 auto',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
       }}>
         {/* Brand */}
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
           <div style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: '10px',
-            background: 'linear-gradient(135deg, #00f0ff 0%, #8b5cf6 100%)',
+            width: '28px',
+            height: '28px',
+            borderRadius: '7px',
+            background: 'var(--accent)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 0 20px rgba(0, 240, 255, 0.4)',
+            flexShrink: 0,
           }}>
-            <Globe size={22} color="#07090e" strokeWidth={2.5} />
+            <Globe size={15} color="#0a0b0f" strokeWidth={2.5} />
           </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontWeight: 800, fontSize: '1.2rem', letterSpacing: '-0.02em', color: '#fff' }}>
-                MCP<span style={{ color: '#00f0ff' }}>Web</span>Analyzer
-              </span>
-              <span className="badge badge-primary" style={{ fontSize: '0.65rem', padding: '2px 8px' }}>
-                v1.0
-              </span>
-            </div>
-            <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Model Context Protocol Intelligence</div>
-          </div>
+          <span style={{
+            fontWeight: 700,
+            fontSize: '0.95rem',
+            letterSpacing: '-0.02em',
+            color: 'var(--text-primary)',
+          }}>
+            ArgusMCP
+          </span>
         </Link>
 
-        {/* Status Indicators & Links */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div className="glass-pill" style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '6px 14px',
-            fontSize: '0.8rem',
-            color: '#10b981',
-          }}>
-            <span style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              backgroundColor: '#10b981',
-              boxShadow: '0 0 8px #10b981',
-            }} />
-            <span style={{ color: '#94a3b8' }}>MCP Server:</span>
-            <strong style={{ color: '#f3f4f6' }}>Active</strong>
-          </div>
-
-          <div className="glass-pill" style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '6px 12px',
-            fontSize: '0.8rem',
-            color: '#a78bfa',
-          }}>
-            <Sparkles size={14} color="#a78bfa" />
-            <span>OpenRouter Claude 3.5</span>
-          </div>
+        {/* Status */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          fontSize: '12px',
+          color: 'var(--text-tertiary)',
+        }}>
+          <span style={{
+            width: '6px',
+            height: '6px',
+            borderRadius: '50%',
+            backgroundColor: 'var(--green)',
+            display: 'inline-block',
+          }} className="animate-pulse-dot" />
+          <span>Online</span>
         </div>
       </div>
     </header>

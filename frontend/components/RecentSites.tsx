@@ -1,8 +1,8 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Globe, Layers, ArrowUpRight, Clock, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { Globe, Layers, ArrowRight, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 
 interface SiteItem {
   id: string;
@@ -21,49 +21,42 @@ export default function RecentSites() {
 
   useEffect(() => {
     fetch('/api/sites?limit=6')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.sites) setSites(data.sites);
-        setLoading(false);
-      })
+      .then((r) => r.json())
+      .then((d) => { if (d.sites) setSites(d.sites); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
 
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
-        <Loader2 className="animate-spin-slow" size={24} color="#00f0ff" />
-      </div>
-    );
-  }
+  if (loading) return (
+    <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
+      <Loader2 size={18} className="animate-spin" color="var(--text-tertiary)" />
+    </div>
+  );
 
-  if (sites.length === 0) {
-    return null;
-  }
+  if (sites.length === 0) return null;
 
   return (
-    <div style={{ width: '100%', maxWidth: '1200px', margin: '3rem auto 0', padding: '0 1.5rem' }}>
+    <div style={{ maxWidth: '900px', margin: '3.5rem auto 0' }}>
+      {/* Header */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: '1.25rem',
+        marginBottom: '1rem',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Clock size={18} color="#00f0ff" />
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#f3f4f6' }}>
-            Recently Analyzed Websites
-          </h3>
-        </div>
-        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
-          Stored in MCP Intelligence Knowledge Base
+        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', letterSpacing: '0.02em' }}>
+          Recent
         </span>
       </div>
 
+      {/* Grid */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-        gap: '1.25rem',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+        gap: '1px',
+        background: 'var(--border)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-lg)',
+        overflow: 'hidden',
       }}>
         {sites.map((site) => (
           <Link
@@ -72,101 +65,93 @@ export default function RecentSites() {
             style={{ textDecoration: 'none' }}
           >
             <div
-              className="glass-panel"
               style={{
-                padding: '1.25rem',
-                borderRadius: '16px',
-                height: '100%',
+                background: 'var(--bg-surface)',
+                padding: '1.1rem 1.25rem',
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'space-between',
-                transition: 'all 0.25s ease',
-                position: 'relative',
-                overflow: 'hidden',
+                gap: '0.6rem',
+                height: '100%',
+                transition: 'background 0.12s',
+                cursor: 'pointer',
               }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.borderColor = 'rgba(0, 240, 255, 0.4)';
-                e.currentTarget.style.boxShadow = '0 12px 35px -5px rgba(0, 240, 255, 0.25)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.transform = 'translateY(0px)';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-                e.currentTarget.style.boxShadow = 'var(--shadow-card)';
-              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-raised)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--bg-surface)'; }}
             >
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    {site.favicon ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={site.favicon}
-                        alt=""
-                        style={{ width: '20px', height: '20px', borderRadius: '4px', objectFit: 'contain' }}
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                    ) : (
-                      <Globe size={18} color="#00f0ff" />
-                    )}
-                    <span style={{ fontWeight: 600, fontSize: '0.95rem', color: '#f3f4f6' }}>
-                      {site.domain || site.url}
-                    </span>
-                  </div>
-
-                  <div>
-                    {site.status === 'done' ? (
-                      <span className="badge badge-success">
-                        <CheckCircle2 size={12} />
-                        Analyzed
-                      </span>
-                    ) : site.status === 'analyzing' ? (
-                      <span className="badge badge-primary">
-                        <Loader2 size={12} className="animate-spin-slow" />
-                        Analyzing
-                      </span>
-                    ) : (
-                      <span className="badge badge-warning">
-                        <AlertCircle size={12} />
-                        Pending
-                      </span>
-                    )}
-                  </div>
+              {/* Top row */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                  {site.favicon ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={site.favicon}
+                      alt=""
+                      width={16}
+                      height={16}
+                      style={{ borderRadius: '3px', objectFit: 'contain', flexShrink: 0 }}
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    />
+                  ) : (
+                    <Globe size={14} color="var(--text-tertiary)" style={{ flexShrink: 0 }} />
+                  )}
+                  <span style={{
+                    fontWeight: 600,
+                    fontSize: '0.85rem',
+                    color: 'var(--text-primary)',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {site.domain || site.url}
+                  </span>
                 </div>
 
+                {site.status === 'done' ? (
+                  <span className="badge badge-green">Done</span>
+                ) : site.status === 'analyzing' ? (
+                  <span className="badge badge-blue">
+                    <Loader2 size={9} className="animate-spin" />
+                    Running
+                  </span>
+                ) : (
+                  <span className="badge badge-amber">Pending</span>
+                )}
+              </div>
+
+              {/* Title */}
+              {site.title && (
                 <p style={{
-                  fontSize: '0.85rem',
-                  color: '#94a3b8',
-                  lineHeight: '1.4',
+                  fontSize: '0.8rem',
+                  color: 'var(--text-secondary)',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   display: '-webkit-box',
                   WebkitLineClamp: 2,
                   WebkitBoxOrient: 'vertical',
-                  marginBottom: '1rem',
+                  lineHeight: 1.4,
                 }}>
-                  {site.title || 'Analyzing website architecture and metadata...'}
+                  {site.title}
                 </p>
-              </div>
+              )}
 
+              {/* Footer */}
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                paddingTop: '0.75rem',
-                borderTop: '1px solid rgba(255, 255, 255, 0.06)',
-                fontSize: '0.78rem',
-                color: '#64748b',
+                marginTop: 'auto',
+                paddingTop: '0.5rem',
+                borderTop: '1px solid var(--border)',
+                fontSize: '0.75rem',
+                color: 'var(--text-tertiary)',
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Layers size={14} color="#8b5cf6" />
-                  <span>{site.page_count || 1} pages crawled</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Layers size={11} />
+                  <span>{site.page_count || 1} pages</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#00f0ff', fontWeight: 600 }}>
-                  <span>Inspect MCP</span>
-                  <ArrowUpRight size={14} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '3px', color: 'var(--accent)', fontWeight: 500, fontSize: '0.75rem' }}>
+                  <span>View report</span>
+                  <ArrowRight size={11} />
                 </div>
               </div>
             </div>

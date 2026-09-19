@@ -1,11 +1,20 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Navbar from '../../../components/Navbar';
 import AnalysisDashboard from '../../../components/AnalysisDashboard';
-import { Loader2, Globe, Cpu, Search, CheckCircle2, AlertTriangle, ArrowLeft, Terminal, Sparkles } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import { Loader2, AlertTriangle, ArrowLeft } from 'lucide-react';
+
+const steps = [
+  'Loading browser context',
+  'Rendering page',
+  'Extracting content',
+  'Detecting tech stack',
+  'Mapping links',
+  'Indexing assets',
+  'Finalizing',
+];
 
 export default function AnalyzePage() {
   const params = useParams();
@@ -18,214 +27,161 @@ export default function AnalyzePage() {
     pages: Record<string, any>[];
   }>({ site: null, analysis: null, pages: [] });
 
-  const [status, setStatus] = useState<'loading' | 'analyzing' | 'done' | 'error'>('loading');
+  const [status, setStatus]   = useState<'loading' | 'analyzing' | 'done' | 'error'>('loading');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [crawlStep, setCrawlStep] = useState(0);
+  const [stepIdx, setStepIdx]  = useState(0);
 
-  const crawlSteps = [
-    'Initializing Headless Chromium browser context...',
-    'Navigating and rendering client-side DOM...',
-    'Extracting full-text content, headings & meta tags...',
-    'Fingerprinting frameworks, CMS & analytics pixels...',
-    'Mapping internal navigation tree and external links...',
-    'Indexing media assets and computing performance timings...',
-    'Registering dynamic MCP tools for OpenRouter AI agent...',
-    'Finalizing analysis and synthesizing intelligence...',
-  ];
-
+  // Cycle through step labels while analyzing
   useEffect(() => {
-    if (status === 'analyzing') {
-      const interval = setInterval(() => {
-        setCrawlStep((prev) => (prev < crawlSteps.length - 1 ? prev + 1 : prev));
-      }, 2500);
-      return () => clearInterval(interval);
-    }
-  }, [status, crawlSteps.length]);
+    if (status !== 'analyzing') return;
+    const t = setInterval(() => setStepIdx((p) => (p < steps.length - 1 ? p + 1 : p)), 2800);
+    return () => clearInterval(t);
+  }, [status]);
 
   useEffect(() => {
     if (!siteId) return;
+    let active = true;
+    let timer: NodeJS.Timeout;
 
-    let isSubscribed = true;
-    let pollTimer: NodeJS.Timeout;
-
-    const fetchStatusAndData = async () => {
+    const poll = async () => {
       try {
         const res = await fetch(`/api/sites/${siteId}`);
-        if (!res.ok) {
-          throw new Error('Failed to load site details');
-        }
+        if (!res.ok) throw new Error('Could not load site');
         const data = await res.json();
-        if (!isSubscribed) return;
+        if (!active) return;
 
         if (data.site) {
-          setSiteData({
-            site: data.site,
-            analysis: data.analysis,
-            pages: data.pages || [],
-          });
+          setSiteData({ site: data.site, analysis: data.analysis, pages: data.pages || [] });
 
-          if (data.site.status === 'done') {
-            setStatus('done');
-            // Fire celebration confetti
-            try {
-              confetti({
-                particleCount: 80,
-                spread: 70,
-                origin: { y: 0.6 },
-                colors: ['#00f0ff', '#8b5cf6', '#10b981', '#ffffff'],
-              });
-            } catch {
-              // Ignore if canvas-confetti fails
-            }
-          } else if (data.site.status === 'error') {
+          if (data.site.status === 'done')  { setStatus('done'); }
+          else if (data.site.status === 'error') {
             setStatus('error');
-            setErrorMsg(data.site.error_msg || 'Analysis encountered an error');
+            setErrorMsg(data.site.error_msg || 'Analysis failed');
           } else {
             setStatus('analyzing');
-            pollTimer = setTimeout(fetchStatusAndData, 1800);
+            timer = setTimeout(poll, 1800);
           }
         }
       } catch (err: any) {
-        if (!isSubscribed) return;
+        if (!active) return;
         setStatus('error');
-        setErrorMsg(err.message || 'Error communicating with backend');
+        setErrorMsg(err.message || 'Connection error');
       }
     };
 
-    fetchStatusAndData();
-
-    return () => {
-      isSubscribed = false;
-      clearTimeout(pollTimer);
-    };
+    poll();
+    return () => { active = false; clearTimeout(timer); };
   }, [siteId]);
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Navbar />
 
-      <main style={{ flex: 1, padding: '2rem 1.5rem 4rem' }}>
+      <main style={{ flex: 1, padding: '2rem 1rem 4rem' }}>
+
+        {/* Loading */}
         {status === 'loading' && (
-          <div style={{
-            maxWidth: '600px',
-            margin: '6rem auto',
-            textAlign: 'center',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '1rem',
-          }}>
-            <Loader2 className="animate-spin-slow" size={36} color="#00f0ff" />
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#f3f4f6' }}>Connecting to MCP System...</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem', marginTop: '8rem', color: 'var(--text-tertiary)' }}>
+            <Loader2 size={22} className="animate-spin" />
+            <span style={{ fontSize: '0.85rem' }}>Loading…</span>
           </div>
         )}
 
+        {/* Analyzing */}
         {status === 'analyzing' && (
-          <div style={{
-            maxWidth: '700px',
-            margin: '4rem auto',
-          }}>
-            <div className="glass-panel" style={{ padding: '2.5rem', borderRadius: '24px', textAlign: 'center' }}>
-              <div style={{
-                width: '72px',
-                height: '72px',
-                borderRadius: '20px',
-                backgroundColor: 'rgba(0, 240, 255, 0.1)',
-                border: '1px solid rgba(0, 240, 255, 0.3)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 1.5rem',
-                boxShadow: 'var(--shadow-glow)',
-              }}>
-                <Loader2 size={36} color="#00f0ff" className="animate-spin-slow" />
+          <div style={{ maxWidth: '480px', margin: '7rem auto', textAlign: 'center' }}>
+            <div style={{
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-lg)',
+              padding: '2.5rem 2rem',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '1.5rem',
+            }}>
+              <Loader2 size={28} className="animate-spin" color="var(--accent)" />
+
+              <div>
+                <h2 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.4rem' }}>
+                  Analyzing
+                </h2>
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)', wordBreak: 'break-all' }}>
+                  {siteData.site?.url || ''}
+                </p>
               </div>
 
-              <span className="badge badge-primary" style={{ marginBottom: '1rem' }}>
-                Playwright Headless Engine Active
-              </span>
-
-              <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.5rem' }}>
-                Analyzing Website Architecture
-              </h2>
-
-              <p style={{ fontSize: '0.95rem', color: '#94a3b8', marginBottom: '2rem', wordBreak: 'break-all' }}>
-                Target: <strong style={{ color: '#00f0ff' }}>{siteData.site?.url || 'Crawling site...'}</strong>
-              </p>
-
-              {/* Crawl Progress Pipeline */}
-              <div style={{
-                backgroundColor: 'rgba(0, 0, 0, 0.4)',
-                borderRadius: '14px',
-                padding: '1.25rem',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                textAlign: 'left',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '10px',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#a78bfa', fontSize: '0.8rem', fontWeight: 600 }}>
-                  <Terminal size={14} />
-                  <span>CRAWL PIPELINE STATUS:</span>
-                </div>
-
-                <div style={{ fontSize: '0.92rem', color: '#34d399', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block' }} />
-                  {crawlSteps[crawlStep]}
-                </div>
-
-                {/* Progress bar */}
+              {/* Progress */}
+              <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 <div style={{
-                  height: '6px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                  height: '3px',
+                  background: 'var(--bg-raised)',
                   borderRadius: '999px',
                   overflow: 'hidden',
-                  marginTop: '0.5rem',
                 }}>
                   <div style={{
                     height: '100%',
-                    width: `${Math.min(96, ((crawlStep + 1) / crawlSteps.length) * 100)}%`,
-                    background: 'linear-gradient(90deg, #00f0ff, #8b5cf6)',
+                    width: `${Math.min(96, ((stepIdx + 1) / steps.length) * 100)}%`,
+                    background: 'var(--accent)',
                     borderRadius: '999px',
-                    transition: 'width 0.6s ease',
+                    transition: 'width 0.7s ease',
                   }} />
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', textAlign: 'left' }}>
+                  {steps[stepIdx]}…
                 </div>
               </div>
             </div>
           </div>
         )}
 
+        {/* Error */}
         {status === 'error' && (
-          <div style={{ maxWidth: '600px', margin: '5rem auto', textAlign: 'center' }}>
-            <div className="glass-panel" style={{ padding: '2.5rem', borderRadius: '20px' }}>
-              <AlertTriangle size={48} color="#ef4444" style={{ margin: '0 auto 1rem' }} />
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#f87171', marginBottom: '0.75rem' }}>
-                Analysis Could Not Complete
-              </h2>
-              <p style={{ color: '#cbd5e1', fontSize: '0.92rem', marginBottom: '1.5rem' }}>
-                {errorMsg || 'Failed to crawl or parse this website. Please verify that the URL is live and accessible.'}
-              </p>
+          <div style={{ maxWidth: '480px', margin: '7rem auto' }}>
+            <div style={{
+              background: 'var(--bg-surface)',
+              border: '1px solid rgba(231, 76, 60, 0.25)',
+              borderRadius: 'var(--radius-lg)',
+              padding: '2rem',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '1rem',
+              textAlign: 'center',
+            }}>
+              <AlertTriangle size={28} color="var(--red)" />
+              <div>
+                <h2 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.4rem' }}>
+                  Analysis failed
+                </h2>
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                  {errorMsg || 'Could not crawl this URL. Make sure it is publicly accessible.'}
+                </p>
+              </div>
               <button
                 onClick={() => router.push('/')}
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '8px',
-                  padding: '0.75rem 1.5rem',
-                  borderRadius: '999px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                  color: '#ffffff',
-                  fontWeight: 600,
-                  fontSize: '0.9rem',
+                  gap: '6px',
+                  padding: '0.5rem 1.1rem',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--bg-raised)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-primary)',
+                  fontWeight: 500,
+                  fontSize: '0.83rem',
+                  cursor: 'pointer',
                 }}
               >
-                <ArrowLeft size={16} />
-                <span>Return to Homepage</span>
+                <ArrowLeft size={14} />
+                Go back
               </button>
             </div>
           </div>
         )}
 
+        {/* Done */}
         {status === 'done' && siteData.site && (
           <AnalysisDashboard
             site={siteData.site}

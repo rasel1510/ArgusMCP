@@ -7,6 +7,14 @@ const nextConfig = {
       { protocol: 'http', hostname: '**' },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: '/logo192.png',
+        destination: '/icon.svg',
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;

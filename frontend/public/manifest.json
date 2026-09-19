@@ -1,0 +1,15 @@
+{
+  "short_name": "ArgusMCP",
+  "name": "ArgusMCP — Autonomous Web Intelligence",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0a0b0f",
+  "theme_color": "#0a0b0f",
+  "display": "standalone"
+}

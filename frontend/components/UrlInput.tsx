@@ -1,8 +1,8 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Sparkles, ArrowRight, Loader2, ShieldCheck, Zap } from 'lucide-react';
+import { Search, ArrowRight, Loader2 } from 'lucide-react';
 
 interface UrlInputProps {
   initialUrl?: string;
@@ -29,55 +29,61 @@ export default function UrlInput({ initialUrl = '' }: UrlInputProps) {
       });
 
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to start website analysis');
-      }
+      if (!res.ok) throw new Error(data.error || 'Analysis failed');
 
-      // Navigate to the analysis dashboard
       router.push(`/analyze/${data.siteId}`);
     } catch (err: any) {
-      setError(err.message || 'Something went wrong');
+      setError(err.message || 'Something went wrong. Try again.');
       setLoading(false);
     }
   };
 
-  const handleQuickUrl = (quickUrl: string) => {
-    setUrl(quickUrl);
-  };
+  const samples = [
+    { label: 'vercel.com', url: 'https://vercel.com' },
+    { label: 'github.com', url: 'https://github.com' },
+    { label: 'stripe.com', url: 'https://stripe.com' },
+    { label: 'linear.app', url: 'https://linear.app' },
+  ];
 
   return (
-    <div style={{ width: '100%', maxWidth: '800px', margin: '0 auto' }}>
-      <form onSubmit={handleSubmit} style={{ position: 'relative' }}>
-        <div
-          className="glass-panel animate-pulse-glow"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            padding: '0.5rem 0.6rem 0.5rem 1.25rem',
-            borderRadius: '999px',
-            backgroundColor: 'rgba(12, 16, 26, 0.85)',
-            border: '1px solid rgba(0, 240, 255, 0.3)',
-            transition: 'all 0.3s ease',
-          }}
+    <div style={{ width: '100%', maxWidth: '680px', margin: '0 auto' }}>
+      <form onSubmit={handleSubmit}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          background: 'var(--bg-surface)',
+          border: `1px solid ${loading ? 'var(--border-focus)' : 'var(--border)'}`,
+          borderRadius: 'var(--radius-lg)',
+          padding: '6px 6px 6px 1rem',
+          transition: 'border-color 0.15s',
+          boxShadow: loading ? '0 0 0 3px var(--accent-glow)' : 'none',
+        }}
+          onFocus={() => {}}
         >
-          <Search size={22} color="#00f0ff" style={{ marginRight: '0.75rem', flexShrink: 0 }} />
-          
+          <Search
+            size={16}
+            color="var(--text-tertiary)"
+            style={{ marginRight: '0.6rem', flexShrink: 0 }}
+          />
+
           <input
             id="website-url-input"
             type="text"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            placeholder="Paste any website URL e.g. https://codemypixel.com/"
+            placeholder="Enter website URL — e.g. https://example.com"
             disabled={loading}
+            autoComplete="off"
+            spellCheck={false}
             style={{
               flex: 1,
               background: 'transparent',
               border: 'none',
               outline: 'none',
-              color: '#ffffff',
-              fontSize: '1.05rem',
-              fontWeight: 500,
+              color: 'var(--text-primary)',
+              fontSize: '0.9rem',
               fontFamily: 'inherit',
+              minWidth: 0,
             }}
           />
 
@@ -88,31 +94,31 @@ export default function UrlInput({ initialUrl = '' }: UrlInputProps) {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              padding: '0.75rem 1.75rem',
-              borderRadius: '999px',
-              background: loading
-                ? 'rgba(255, 255, 255, 0.1)'
-                : 'linear-gradient(135deg, #00f0ff 0%, #8b5cf6 100%)',
-              color: loading ? '#94a3b8' : '#07090e',
-              fontWeight: 700,
-              fontSize: '0.95rem',
-              letterSpacing: '0.02em',
-              transition: 'all 0.2s ease',
-              boxShadow: loading ? 'none' : '0 0 25px rgba(0, 240, 255, 0.4)',
+              gap: '6px',
+              padding: '0.55rem 1.1rem',
+              borderRadius: '10px',
+              background: loading || !url.trim()
+                ? 'rgba(255,255,255,0.05)'
+                : 'var(--accent)',
+              color: loading || !url.trim() ? 'var(--text-tertiary)' : '#fff',
+              fontWeight: 600,
+              fontSize: '0.85rem',
+              letterSpacing: '-0.01em',
+              transition: 'all 0.15s',
               cursor: loading || !url.trim() ? 'not-allowed' : 'pointer',
               flexShrink: 0,
+              whiteSpace: 'nowrap',
             }}
           >
             {loading ? (
               <>
-                <Loader2 size={18} className="animate-spin-slow" color="#00f0ff" />
-                <span>Crawling...</span>
+                <Loader2 size={14} className="animate-spin" />
+                <span>Analyzing…</span>
               </>
             ) : (
               <>
-                <span>Analyze with MCP</span>
-                <ArrowRight size={18} />
+                <span>Analyze</span>
+                <ArrowRight size={14} />
               </>
             )}
           </button>
@@ -121,58 +127,51 @@ export default function UrlInput({ initialUrl = '' }: UrlInputProps) {
 
       {error && (
         <div style={{
-          marginTop: '1rem',
-          padding: '0.75rem 1.25rem',
-          borderRadius: '12px',
-          backgroundColor: 'rgba(239, 68, 68, 0.12)',
-          border: '1px solid rgba(239, 68, 68, 0.3)',
-          color: '#fca5a5',
-          fontSize: '0.9rem',
-          textAlign: 'center',
+          marginTop: '0.75rem',
+          padding: '0.6rem 1rem',
+          borderRadius: 'var(--radius-md)',
+          background: 'var(--red-dim)',
+          border: '1px solid rgba(231, 76, 60, 0.25)',
+          color: '#f97068',
+          fontSize: '0.83rem',
         }}>
           {error}
         </div>
       )}
 
-      {/* Quick sample link selector */}
+      {/* Samples */}
       <div style={{
-        marginTop: '1.25rem',
+        marginTop: '1rem',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
-        gap: '0.5rem',
+        gap: '0.4rem',
         flexWrap: 'wrap',
       }}>
-        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Try sample:</span>
-        {[
-          { label: 'codemypixel.com', url: 'https://codemypixel.com/' },
-          { label: 'vercel.com', url: 'https://vercel.com' },
-          { label: 'github.com', url: 'https://github.com' },
-          { label: 'stripe.com', url: 'https://stripe.com' },
-        ].map((sample) => (
+        <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>Try:</span>
+        {samples.map((s) => (
           <button
-            key={sample.url}
+            key={s.url}
             type="button"
-            onClick={() => handleQuickUrl(sample.url)}
+            onClick={() => setUrl(s.url)}
             style={{
-              padding: '4px 12px',
-              borderRadius: '999px',
-              backgroundColor: 'rgba(255, 255, 255, 0.04)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              color: '#94a3b8',
+              padding: '2px 10px',
+              borderRadius: 'var(--radius-full)',
+              background: 'var(--bg-raised)',
+              border: '1px solid var(--border)',
+              color: 'var(--text-secondary)',
               fontSize: '0.78rem',
-              transition: 'all 0.15s ease',
+              transition: 'all 0.12s',
             }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.color = '#00f0ff';
-              e.currentTarget.style.borderColor = 'rgba(0, 240, 255, 0.3)';
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border-hover)';
+              e.currentTarget.style.color = 'var(--text-primary)';
             }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.color = '#94a3b8';
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border)';
+              e.currentTarget.style.color = 'var(--text-secondary)';
             }}
           >
-            {sample.label}
+            {s.label}
           </button>
         ))}
       </div>

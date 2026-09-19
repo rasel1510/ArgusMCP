@@ -73,7 +73,7 @@ export function createMCPServer(): Server {
           inputSchema: {
             type: 'object',
             properties: {
-              url: { type: 'string', description: 'The website URL to analyze (e.g. https://codemypixel.com)' },
+              url: { type: 'string', description: 'The website URL to analyze (e.g. https://example.com)' },
             },
             required: ['url'],
           },

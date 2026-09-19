@@ -1,18 +1,13 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Send,
-  Bot,
   User,
-  Sparkles,
-  Terminal,
   Loader2,
   ChevronDown,
   ChevronRight,
-  Code2,
-  CheckCircle2,
-  AlertCircle
+  MessageSquare,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
@@ -36,10 +31,12 @@ interface ChatInterfaceProps {
 }
 
 export default function ChatInterface({ siteId, siteTitle, domain }: ChatInterfaceProps) {
+  const siteName = siteTitle || domain || 'this website';
+
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: `Hello! I am your **MCP Website Intelligence Assistant** for **${siteTitle || domain || 'this website'}**.\n\nAll scraped pages, SEO meta-data, tech signatures, performance metrics, links, and text content are loaded into my **Model Context Protocol (MCP) tool set**.\n\nAsk me anything or pick one of the suggested actions below!`,
+      content: `I have full access to the crawled data for **${siteName}** — pages, SEO metadata, tech stack, performance, links, and images.\n\nAsk me anything about the site.`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
@@ -48,17 +45,12 @@ export default function ChatInterface({ siteId, siteTitle, domain }: ChatInterfa
   const [expandedTools, setExpandedTools] = useState<Record<string, boolean>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   useEffect(() => {
-    scrollToBottom();
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
-  const toggleToolExpand = (id: string) => {
+  const toggleTool = (id: string) =>
     setExpandedTools((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
 
   const handleSend = async (queryText?: string) => {
     const text = queryText || input;
@@ -75,41 +67,32 @@ export default function ChatInterface({ siteId, siteTitle, domain }: ChatInterfa
     setLoading(true);
 
     try {
-      // Build conversation history for context
-      const history = messages.slice(-6).map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
+      const history = messages.slice(-6).map((m) => ({ role: m.role, content: m.content }));
 
       const res = await fetch('/api/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          siteId,
-          query: text.trim(),
-          history,
-        }),
+        body: JSON.stringify({ siteId, query: text.trim(), history }),
       });
 
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to process MCP query');
-      }
+      if (!res.ok) throw new Error(data.error || 'Request failed');
 
-      const assistantMsg: Message = {
-        role: 'assistant',
-        content: data.answer,
-        executedTools: data.executedTools || [],
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-
-      setMessages((prev) => [...prev, assistantMsg]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: data.answer,
+          executedTools: data.executedTools || [],
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        },
+      ]);
     } catch (err: any) {
       setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
-          content: `⚠️ **Error communicating with MCP agent:** ${err.message || 'Unknown error'}`,
+          content: `Error: ${err.message || 'Unknown error'}`,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
       ]);
@@ -119,279 +102,176 @@ export default function ChatInterface({ siteId, siteTitle, domain }: ChatInterfa
   };
 
   const suggestions = [
-    'What is the tech stack of this site?',
-    'Summarize this website and its core business',
-    'Audit the SEO strengths and issues',
-    'What are the performance metrics and load times?',
-    'List all contact information and social profiles',
-    'What internal and external links are present?',
+    'What tech stack is this site using?',
+    'Summarize what this site does',
+    'Audit the SEO',
+    'List all contact info and socials',
+    'What are the load times?',
   ];
 
   return (
     <div style={{
       display: 'flex',
       flexDirection: 'column',
-      height: '720px',
-      backgroundColor: 'rgba(11, 14, 22, 0.95)',
-      borderRadius: '16px',
-      border: '1px solid rgba(255, 255, 255, 0.08)',
+      height: '680px',
+      background: 'var(--bg-surface)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--radius-lg)',
       overflow: 'hidden',
-      boxShadow: 'var(--shadow-card)',
     }}>
       {/* Header */}
       <div style={{
-        padding: '1rem 1.5rem',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+        padding: '0.875rem 1.25rem',
+        borderBottom: '1px solid var(--border)',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        backgroundColor: 'rgba(16, 20, 31, 0.8)',
+        gap: '8px',
+        background: 'var(--bg-raised)',
+        flexShrink: 0,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            borderRadius: '8px',
-            background: 'linear-gradient(135deg, #8b5cf6 0%, #00f0ff 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            <Bot size={18} color="#07090e" />
-          </div>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#f3f4f6' }}>
-              MCP Tool Query Agent
-            </div>
-            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-              Direct access to all 9 MCP web intelligence tools
-            </div>
-          </div>
-        </div>
-
-        <div className="glass-pill" style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-          padding: '4px 12px',
-          fontSize: '0.75rem',
-          color: '#a78bfa',
-        }}>
-          <Terminal size={12} />
-          <span>Tools Loaded</span>
-        </div>
+        <MessageSquare size={15} color="var(--text-secondary)" />
+        <span style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+          Assistant
+        </span>
+        <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+          {siteName}
+        </span>
       </div>
 
-      {/* Messages list */}
+      {/* Messages */}
       <div style={{
         flex: 1,
         overflowY: 'auto',
-        padding: '1.5rem',
+        padding: '1.25rem',
         display: 'flex',
         flexDirection: 'column',
-        gap: '1.25rem',
+        gap: '1rem',
       }}>
         {messages.map((msg, idx) => (
           <div
             key={idx}
+            className="animate-fade-up"
             style={{
               display: 'flex',
-              gap: '12px',
+              flexDirection: 'column',
+              alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
+              gap: '4px',
+              maxWidth: '88%',
               alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-              maxWidth: msg.role === 'user' ? '80%' : '90%',
             }}
           >
-            {msg.role === 'assistant' && (
-              <div style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                backgroundColor: 'rgba(139, 92, 246, 0.2)',
-                border: '1px solid rgba(139, 92, 246, 0.4)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                marginTop: '2px',
-              }}>
-                <Bot size={18} color="#a78bfa" />
+            {/* Tool executions */}
+            {msg.executedTools && msg.executedTools.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '4px' }}>
+                {msg.executedTools.map((t, tIdx) => {
+                  const key = `${idx}-${tIdx}`;
+                  const open = !!expandedTools[key];
+                  return (
+                    <div key={tIdx} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <button
+                        type="button"
+                        className="tool-pill"
+                        onClick={() => toggleTool(key)}
+                      >
+                        {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+                        {t.tool}
+                      </button>
+                      {open && (
+                        <div style={{
+                          background: 'var(--bg-raised)',
+                          border: '1px solid var(--border)',
+                          borderRadius: 'var(--radius-md)',
+                          padding: '0.6rem',
+                          fontSize: '11px',
+                          fontFamily: 'var(--font-mono)',
+                          maxHeight: '140px',
+                          overflowY: 'auto',
+                          color: 'var(--text-secondary)',
+                          whiteSpace: 'pre-wrap',
+                        }}>
+                          <div style={{ color: 'var(--text-tertiary)', marginBottom: '4px' }}>
+                            args: {JSON.stringify(t.args)}
+                          </div>
+                          <div>{JSON.stringify(t.result, null, 2)}</div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
-              {/* Executed Tools Badge Container */}
-              {msg.executedTools && msg.executedTools.length > 0 && (
-                <div style={{
-                  marginBottom: '6px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '4px',
-                }}>
-                  <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    ⚡ MCP Tools Executed ({msg.executedTools.length}):
-                  </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                    {msg.executedTools.map((t, tIdx) => {
-                      const toolKey = `${idx}-${tIdx}`;
-                      const isExpanded = !!expandedTools[toolKey];
-                      return (
-                        <div key={tIdx} style={{ display: 'flex', flexDirection: 'column' }}>
-                          <button
-                            type="button"
-                            onClick={() => toggleToolExpand(toolKey)}
-                            className="tool-call-pill"
-                            style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                          >
-                            <Code2 size={12} color="#00f0ff" />
-                            <span>{t.tool}</span>
-                            {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                          </button>
-
-                          {isExpanded && (
-                            <div style={{
-                              marginTop: '4px',
-                              padding: '8px',
-                              backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                              border: '1px solid rgba(255, 255, 255, 0.1)',
-                              borderRadius: '6px',
-                              fontSize: '0.75rem',
-                              fontFamily: 'var(--font-mono)',
-                              maxHeight: '160px',
-                              overflowY: 'auto',
-                              color: '#cbd5e1',
-                              whiteSpace: 'pre-wrap',
-                            }}>
-                              <div style={{ color: '#94a3b8', marginBottom: '4px' }}>Args: {JSON.stringify(t.args)}</div>
-                              <div style={{ color: '#34d399' }}>Result: {JSON.stringify(t.result, null, 2)}</div>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
+            {/* Bubble */}
+            <div style={{
+              padding: '0.7rem 1rem',
+              borderRadius: msg.role === 'user' ? '12px 12px 3px 12px' : '12px 12px 12px 3px',
+              background: msg.role === 'user' ? 'var(--accent)' : 'var(--bg-raised)',
+              border: msg.role === 'user' ? 'none' : '1px solid var(--border)',
+              color: msg.role === 'user' ? '#fff' : 'var(--text-primary)',
+              fontSize: '0.87rem',
+              lineHeight: 1.6,
+            }}>
+              {msg.role === 'user' ? (
+                <span>{msg.content}</span>
+              ) : (
+                <div className="prose" style={{ fontSize: '0.87rem' }}>
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
                 </div>
               )}
-
-              {/* Message bubble */}
-              <div
-                style={{
-                  padding: '1rem 1.25rem',
-                  borderRadius: msg.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                  backgroundColor: msg.role === 'user'
-                    ? 'rgba(0, 240, 255, 0.12)'
-                    : 'rgba(255, 255, 255, 0.04)',
-                  border: msg.role === 'user'
-                    ? '1px solid rgba(0, 240, 255, 0.3)'
-                    : '1px solid rgba(255, 255, 255, 0.08)',
-                  color: '#f3f4f6',
-                  fontSize: '0.92rem',
-                  lineHeight: '1.6',
-                  boxShadow: msg.role === 'user' ? '0 0 20px rgba(0, 240, 255, 0.1)' : 'none',
-                }}
-              >
-                {msg.role === 'user' ? (
-                  <div>{msg.content}</div>
-                ) : (
-                  <div className="prose prose-invert" style={{ fontSize: '0.92rem' }}>
-                    <ReactMarkdown>{msg.content}</ReactMarkdown>
-                  </div>
-                )}
-              </div>
-
-              <div style={{
-                fontSize: '0.7rem',
-                color: '#64748b',
-                alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                padding: '0 4px',
-              }}>
-                {msg.timestamp}
-              </div>
             </div>
 
-            {msg.role === 'user' && (
-              <div style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                backgroundColor: 'rgba(0, 240, 255, 0.2)',
-                border: '1px solid rgba(0, 240, 255, 0.4)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                marginTop: '2px',
-              }}>
-                <User size={18} color="#00f0ff" />
-              </div>
-            )}
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', padding: '0 4px' }}>
+              {msg.timestamp}
+            </div>
           </div>
         ))}
 
         {loading && (
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '8px',
-              backgroundColor: 'rgba(139, 92, 246, 0.2)',
-              border: '1px solid rgba(139, 92, 246, 0.4)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <Bot size={18} color="#a78bfa" />
-            </div>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '0.75rem 1.25rem',
-              borderRadius: '16px',
-              backgroundColor: 'rgba(255, 255, 255, 0.04)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              color: '#a78bfa',
-              fontSize: '0.85rem',
-            }}>
-              <Loader2 size={16} className="animate-spin-slow" />
-              <span>Querying MCP tools & synthesizing intelligence...</span>
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-tertiary)', fontSize: '0.82rem' }}>
+            <Loader2 size={13} className="animate-spin" />
+            <span>Thinking…</span>
           </div>
         )}
+
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Suggestion pills */}
+      {/* Suggestions */}
       <div style={{
-        padding: '0.5rem 1.5rem',
+        padding: '0.5rem 1.25rem',
         display: 'flex',
-        gap: '8px',
+        gap: '6px',
         overflowX: 'auto',
-        backgroundColor: 'rgba(11, 14, 22, 0.8)',
-        borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+        borderTop: '1px solid var(--border)',
+        background: 'var(--bg-raised)',
+        flexShrink: 0,
       }}>
-        {suggestions.map((s, idx) => (
+        {suggestions.map((s, i) => (
           <button
-            key={idx}
+            key={i}
             type="button"
             disabled={loading}
             onClick={() => handleSend(s)}
             style={{
-              padding: '4px 12px',
-              borderRadius: '999px',
-              backgroundColor: 'rgba(255, 255, 255, 0.04)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              color: '#cbd5e1',
-              fontSize: '0.78rem',
+              padding: '3px 10px',
+              borderRadius: 'var(--radius-full)',
+              background: 'transparent',
+              border: '1px solid var(--border)',
+              color: 'var(--text-secondary)',
+              fontSize: '0.75rem',
               whiteSpace: 'nowrap',
-              transition: 'all 0.15s ease',
+              transition: 'all 0.12s',
+              opacity: loading ? 0.5 : 1,
             }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.borderColor = 'rgba(0, 240, 255, 0.4)';
-              e.currentTarget.style.color = '#00f0ff';
+            onMouseEnter={(e) => {
+              if (!loading) {
+                e.currentTarget.style.borderColor = 'var(--border-hover)';
+                e.currentTarget.style.color = 'var(--text-primary)';
+              }
             }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-              e.currentTarget.style.color = '#cbd5e1';
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border)';
+              e.currentTarget.style.color = 'var(--text-secondary)';
             }}
           >
             {s}
@@ -399,58 +279,57 @@ export default function ChatInterface({ siteId, siteTitle, domain }: ChatInterfa
         ))}
       </div>
 
-      {/* Input area */}
+      {/* Input */}
       <div style={{
-        padding: '1rem 1.5rem',
-        borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-        backgroundColor: 'rgba(16, 20, 31, 0.95)',
+        padding: '0.75rem 1.25rem',
+        borderTop: '1px solid var(--border)',
+        background: 'var(--bg-surface)',
+        flexShrink: 0,
       }}>
         <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSend();
-          }}
-          style={{ display: 'flex', gap: '10px' }}
+          onSubmit={(e) => { e.preventDefault(); handleSend(); }}
+          style={{ display: 'flex', gap: '8px' }}
         >
           <input
-            id="mcp-query-input"
+            id="assistant-input"
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask anything about this website, request actions, or query MCP tools..."
+            placeholder="Ask about this website…"
             disabled={loading}
             style={{
               flex: 1,
-              backgroundColor: 'rgba(255, 255, 255, 0.04)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: '12px',
-              padding: '0.75rem 1.25rem',
-              color: '#ffffff',
-              fontSize: '0.95rem',
+              background: 'var(--bg-raised)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-md)',
+              padding: '0.6rem 0.9rem',
+              color: 'var(--text-primary)',
+              fontSize: '0.87rem',
               outline: 'none',
               fontFamily: 'inherit',
+              transition: 'border-color 0.12s',
             }}
+            onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--border-focus)'; }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; }}
           />
           <button
-            id="mcp-send-btn"
+            id="assistant-send-btn"
             type="submit"
             disabled={loading || !input.trim()}
             style={{
-              padding: '0.75rem 1.25rem',
-              borderRadius: '12px',
-              background: loading || !input.trim()
-                ? 'rgba(255, 255, 255, 0.08)'
-                : 'linear-gradient(135deg, #00f0ff 0%, #8b5cf6 100%)',
-              color: loading || !input.trim() ? '#64748b' : '#07090e',
-              fontWeight: 700,
+              padding: '0.6rem 0.9rem',
+              borderRadius: 'var(--radius-md)',
+              background: loading || !input.trim() ? 'var(--bg-raised)' : 'var(--accent)',
+              color: loading || !input.trim() ? 'var(--text-tertiary)' : '#fff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              transition: 'all 0.2s ease',
+              transition: 'all 0.12s',
               cursor: loading || !input.trim() ? 'not-allowed' : 'pointer',
+              border: '1px solid var(--border)',
             }}
           >
-            <Send size={18} />
+            <Send size={15} />
           </button>
         </form>
       </div>
