@@ -1,74 +1,103 @@
-# Deployment & Database Guide 🚀
+# Deployment Guide: ArgusMCP 🚀
 
-This guide explains how to deploy **MCP Web Analyzer** with maximum security, **Neon DB** (Serverless PostgreSQL), and **Vercel**.
-
----
-
-## 🔒 Security & Privacy Guarantee
-
-- **Zero Secrets in Git**: Your `.env`, `.env.local`, and any API keys (`OPENROUTER_API_KEY`, etc.) are explicitly excluded in [.gitignore](file:///.gitignore).
-- **No Private Data in Commits**: Verification confirmed that no keys or credentials exist in the Git commit history.
-- **Environment Variables**: All secret credentials are set securely in your hosting platform dashboard (e.g., Vercel / Render / Railway) and are never exposed publicly.
+This guide provides an end-to-end walkthrough to deploy **ArgusMCP**:
+- **Frontend**: Deployed to **Vercel** (Global Edge CDN)
+- **Backend**: Deployed to **Render** (Easiest free-tier containerized platform with full Playwright Chromium support)
+- **Database**: **Neon DB** (Free Serverless PostgreSQL with SSL)
 
 ---
 
-## 🐘 1. Database Setup: Neon DB (Serverless PostgreSQL)
+## 🏗 Architecture Overview
 
-Neon DB provides free, serverless PostgreSQL with auto-scaling and connection pooling.
-
-1. Go to [https://neon.tech](https://neon.tech) and create a free account.
-2. Click **Create Project** (choose a project name e.g. `mcp-webanalyzer`).
-3. Under your project **Dashboard**, locate your **Connection Details**:
-   - Choose **Pooled connection**
-   - Copy the connection string format:
-     ```text
-     postgresql://neondb_owner:YOUR_PASSWORD@ep-xyz-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require
-     ```
-4. Set this as your `DATABASE_URL` in your backend environment variables.
-   > **Note**: `mcp_backend/src/db.ts` is already pre-configured to auto-detect Neon DB URLs, enable SSL encryption (`rejectUnauthorized: false`), and automatically run the table migrations on startup.
-
----
-
-## ⚡ 2. Frontend Deployment: Vercel
-
-The frontend is built with **Next.js 14 (App Router)** and is 100% optimized for Vercel.
-
-### Step-by-Step Vercel Setup:
-1. Go to [https://vercel.com](https://vercel.com) and log in with your GitHub account.
-2. Click **Add New...** -> **Project**.
-3. Import your GitHub repository: `rasel1510/MCP_Web_Analyzer_Agent`.
-4. In the **Configure Project** screen:
-   - **Root Directory**: Click *Edit* and select `frontend`.
-   - **Framework Preset**: Next.js (automatically detected).
-   - **Environment Variables**:
-     | Variable Name | Value | Purpose |
-     |---|---|---|
-     | `BACKEND_INTERNAL_URL` | `https://your-backend-service.onrender.com` | URL of your deployed backend |
-     | `NEXT_PUBLIC_BACKEND_URL` | `https://your-backend-service.onrender.com` | Public backend API URL |
-5. Click **Deploy**. Vercel will build and assign you a fast global CDN domain (e.g. `https://mcp-webanalyzer.vercel.app`).
+```
+[ User Browser ]
+       │
+       ▼
+[ Vercel: Next.js 14 Frontend ]
+       │  (Proxies requests via internal route handlers)
+       ▼
+[ Render: Express + MCP Backend (Docker with Playwright) ]
+       ├──► [ Headless Chromium Engine (DOM / SPA Crawling) ]
+       ├──► [ OpenRouter AI (LLM Analysis) ]
+       └──► [ Neon PostgreSQL (Persistent Storage) ]
+```
 
 ---
 
-## 🖥️ 3. Backend Deployment (MCP & Headless Crawler)
+## 🐘 Step 1: Set Up Free Database (Neon Serverless PostgreSQL)
 
-The backend (`mcp_backend`) runs an Express server, Model Context Protocol tools, and **Playwright headless Chromium** for deep web scraping.
+1. Sign up for a free account at **[neon.tech](https://neon.tech)**.
+2. Click **Create Project** (Name: `argus-mcp`).
+3. Under **Connection Details**, select **Pooled connection**.
+4. Copy your connection URI. It will look like:
+   ```text
+   postgresql://neondb_owner:YOUR_PASSWORD@ep-xyz-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require
+   ```
+5. *Keep this connection string ready for Step 2.* (ArgusMCP automatically creates and migrates all required database tables on first boot).
 
-> **Why host backend on Render / Railway / VPS?**  
-> Playwright runs a headless Chrome browser engine to render SPAs and JavaScript pages. Vercel Serverless Functions have strict 10s execution limits and binary size limits that can terminate long web crawls. A containerized or Node environment on **Render.com** (Free) or **Railway** is ideal.
+---
 
-### Deploying Backend on Render (Free & 1-Click):
-1. Create a free account at [https://render.com](https://render.com).
-2. Click **New +** -> **Web Service**.
-3. Connect your repository `rasel1510/MCP_Web_Analyzer_Agent`.
-4. Configure settings:
+## 🖥 Step 2: Deploy Backend to Render (Recommended & Easiest)
+
+> **Why Render?**  
+> Playwright needs a Linux environment with Chromium and headless browser rendering dependencies. We have provided an official **`mcp_backend/Dockerfile`** that builds effortlessly on Render without any missing shared library issues.
+
+1. Create a free account at **[render.com](https://render.com)**.
+2. From your Render Dashboard, click **New +** ➔ **Web Service**.
+3. Select **Build and deploy from a Git repository** and connect your GitHub repo:
+   `https://github.com/rasel1510/ArgusMCP`
+4. Configure the Web Service settings:
+   - **Name**: `argus-mcp-backend` (or your preferred name)
+   - **Region**: Choose the region closest to you or your Neon database (e.g., Frankfurt or Ohio)
    - **Root Directory**: `mcp_backend`
-   - **Build Command**: `npm install && npx playwright install chromium && npm run build`
-   - **Start Command**: `npm run start`
-5. Under **Environment Variables**, add:
-   - `DATABASE_URL`: Your Neon DB connection string
-   - `OPENROUTER_API_KEY`: Your private OpenRouter AI API key
-   - `FRONTEND_URL`: Your Vercel frontend URL (e.g. `https://your-project.vercel.app`)
-   - `PORT`: `4000`
-   - `NODE_ENV`: `production`
+   - **Language / Runtime**: Select **Docker** (Render will automatically pick up `mcp_backend/Dockerfile`)
+   - **Instance Type**: **Free**
+5. Scroll down to **Environment Variables** and add:
+   | Key | Value | Notes |
+   | :--- | :--- | :--- |
+   | `PORT` | `4000` | Port exposed by Dockerfile |
+   | `NODE_ENV` | `production` | Production optimizations |
+   | `OPENROUTER_API_KEY` | `sk-or-v1-...` | Your private OpenRouter AI key |
+   | `DATABASE_URL` | `postgresql://neondb_owner:...` | Neon DB connection string from Step 1 |
+   | `FRONTEND_URL` | `*` *(or your Vercel URL once created)* | Allowed CORS origin |
 6. Click **Deploy Web Service**.
-7. Copy your backend URL (e.g. `https://mcp-webanalyzer-backend.onrender.com`) and paste it into your Vercel frontend's `BACKEND_INTERNAL_URL` and `NEXT_PUBLIC_BACKEND_URL`.
+7. Render will build the Docker container and output logs. Once deployed, copy your service URL:
+   `https://argus-mcp-backend.onrender.com`
+
+---
+
+## ⚡ Step 3: Deploy Frontend to Vercel
+
+The frontend is built with **Next.js 14 App Router** and is natively optimized for Vercel.
+
+1. Go to **[vercel.com](https://vercel.com)** and log in with GitHub.
+2. Click **Add New...** ➔ **Project**.
+3. Import your GitHub repository: `rasel1510/ArgusMCP`.
+4. In the **Configure Project** setup:
+   - **Project Name**: `argus-mcp` (or your choice)
+   - **Framework Preset**: `Next.js` (automatically detected)
+   - **Root Directory**: Click **Edit** and select **`frontend`** *(CRITICAL)*
+5. Open the **Environment Variables** section and add:
+   | Variable Name | Value | Purpose |
+   | :--- | :--- | :--- |
+   | `BACKEND_INTERNAL_URL` | `https://argus-mcp-backend.onrender.com` | Target URL of your Render backend |
+6. Click **Deploy**.
+7. In ~60 seconds, your site will be live at `https://argus-mcp.vercel.app`!
+
+---
+
+## 🔄 Step 4: Final Linkage & Verification
+
+1. Open your deployed Vercel site: `https://your-project.vercel.app`.
+2. Enter a website URL (e.g., `https://news.ycombinator.com` or `https://github.com`) and click **Analyze**.
+3. Watch the real-time crawling, tech stack discovery, SEO audit, and interactive AI Q&A panel load!
+4. *(Optional)* Go back to your Render backend dashboard ➔ Environment Variables, and update `FRONTEND_URL` to your exact Vercel URL (e.g., `https://argus-mcp.vercel.app`) for strict CORS security.
+
+---
+
+## 🛠 Alternative Backend Hosts
+
+If you prefer not to use Render, you can also deploy `mcp_backend/Dockerfile` with 1 click to:
+- **Railway.app**: Select *New Project* ➔ *Deploy from GitHub repo* ➔ Set Root Directory to `mcp_backend`.
+- **Fly.io**: Run `fly launch` inside `mcp_backend/`.
+- **Any VPS (Ubuntu/Debian)**: Run `docker run -d -p 4000:4000 --env-file .env $(docker build -q mcp_backend)`.
