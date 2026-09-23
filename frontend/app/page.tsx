@@ -54,18 +54,9 @@ export default function HomePage() {
             color: 'var(--accent)',
             marginBottom: '0.6rem',
           }}>
-            Autonomous Web Intelligence via the Model Context Protocol
+            An Agentic Web Intelligence via the Model Context Protocol
           </p>
-          <p style={{
-            fontSize: '0.92rem',
-            color: 'var(--text-secondary)',
-            marginBottom: '2.5rem',
-            lineHeight: 1.6,
-            maxWidth: '580px',
-            margin: '0 auto 2.5rem',
-          }}>
-            An agentic framework integrating deep headless crawling, semantic analysis, and structured reporting through standardized MCP tools.
-          </p>
+
 
           <UrlInput />
         </section>

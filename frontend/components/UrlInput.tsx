@@ -58,7 +58,7 @@ export default function UrlInput({ initialUrl = '' }: UrlInputProps) {
           transition: 'border-color 0.15s',
           boxShadow: loading ? '0 0 0 3px var(--accent-glow)' : 'none',
         }}
-          onFocus={() => {}}
+          onFocus={() => { }}
         >
           <Search
             size={16}
@@ -71,7 +71,7 @@ export default function UrlInput({ initialUrl = '' }: UrlInputProps) {
             type="text"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            placeholder="Enter website URL — e.g. https://example.com"
+            placeholder="Enter website URL — e.g. https://example.com and ask any question about this in chat"
             disabled={loading}
             autoComplete="off"
             spellCheck={false}
