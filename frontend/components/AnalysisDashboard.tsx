@@ -28,7 +28,7 @@ interface AnalysisDashboardProps {
 type TabType = 'assistant' | 'overview' | 'tech' | 'seo' | 'links' | 'images' | 'pages' | 'contact';
 
 export default function AnalysisDashboard({ site, analysis, pages }: AnalysisDashboardProps) {
-  const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [activeTab, setActiveTab] = useState<TabType>('assistant');
 
   const seo         = analysis?.seo         || {};
   const techStack   = analysis?.techStack   || {};
@@ -41,6 +41,7 @@ export default function AnalysisDashboard({ site, analysis, pages }: AnalysisDas
   const totalLinks = (links.internal?.length || 0) + (links.external?.length || 0);
 
   const tabs: { id: TabType; label: string; icon: React.ReactNode }[] = [
+    { id: 'assistant', label: 'Assistant',             icon: <MessageSquare size={13} /> },
     { id: 'overview',  label: 'Overview',              icon: <FileText size={13} /> },
     { id: 'tech',      label: `Tech (${techCount})`,   icon: <Cpu size={13} /> },
     { id: 'seo',       label: 'SEO',                   icon: <Search size={13} /> },
@@ -48,7 +49,6 @@ export default function AnalysisDashboard({ site, analysis, pages }: AnalysisDas
     { id: 'images',    label: `Images (${images.length})`, icon: <ImageIcon size={13} /> },
     { id: 'pages',     label: `Pages (${pages.length})`, icon: <Layers size={13} /> },
     { id: 'contact',   label: 'Contact',               icon: <Mail size={13} /> },
-    { id: 'assistant', label: 'Assistant',             icon: <MessageSquare size={13} /> },
   ];
 
   /* ── Shared sub-section header ────────────────────────────── */

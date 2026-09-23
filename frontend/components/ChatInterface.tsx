@@ -297,6 +297,7 @@ export default function ChatInterface({ siteId, siteTitle, domain }: ChatInterfa
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask about this website…"
             disabled={loading}
+            autoFocus
             style={{
               flex: 1,
               background: 'var(--bg-raised)',
